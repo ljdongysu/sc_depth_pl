@@ -34,10 +34,21 @@ https://user-images.githubusercontent.com/11647217/201716221-94fb20ec-0947-4ea0-
 
 
 ## Install
+安装 torch 1.7.1 版本
+```shell
+pip install torch==1.7.1+cu110 torchvision==0.8.2+cu110 torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html pytorch-lightning==1.5.7
+pip install scipy==1.8.1
+pip install kornia==0.5.5
+pip install -r requirements.txt
+```
+
+或者 torch 11.7 版本
 ```
 conda create -n sc_depth_env python=3.8
 conda activate sc_depth_env
 conda install pytorch torchvision pytorch-cuda=11.7 -c pytorch -c nvidia
+pip install pytorch-lightning==1.7.3
+pip install kornia
 pip install -r requirements.txt
 ```
 

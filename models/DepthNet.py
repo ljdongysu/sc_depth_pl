@@ -120,7 +120,7 @@ class DepthDecoder(nn.Module):
 
 class DepthNet(nn.Module):
 
-    def __init__(self, num_layers=18, pretrained=True):
+    def __init__(self, num_layers=18, pretrained=False):
         super(DepthNet, self).__init__()
         self.encoder = ResnetEncoder(
             num_layers=num_layers, pretrained=pretrained, num_input_images=1)
