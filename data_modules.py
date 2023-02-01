@@ -5,7 +5,7 @@ import datasets.custom_transforms as custom_transforms
 from config import get_training_size
 from datasets.train_folders import TrainFolder
 from datasets.validation_folders import ValidationSet
-
+import os
 
 class VideosDataModule(LightningDataModule):
 
@@ -34,7 +34,6 @@ class VideosDataModule(LightningDataModule):
         pass
 
     def setup(self, stage=None):
-
         self.train_dataset = TrainFolder(
             self.hparams.hparams.dataset_dir,
             train=True,
@@ -42,7 +41,9 @@ class VideosDataModule(LightningDataModule):
             sequence_length=self.hparams.hparams.sequence_length,
             skip_frames=self.hparams.hparams.skip_frames,
             use_frame_index=self.hparams.hparams.use_frame_index,
-            with_pseudo_depth=self.load_pseudo_depth
+            with_pseudo_depth=self.load_pseudo_depth,
+            dataset=self.hparams.hparams.dataset_name,
+            file_list=self.hparams.hparams.file_list
         )
 
         if self.hparams.hparams.val_mode == 'depth':
@@ -52,15 +53,29 @@ class VideosDataModule(LightningDataModule):
                 dataset=self.hparams.hparams.dataset_name
             )
         elif self.hparams.hparams.val_mode == 'photo':
-            self.val_dataset = TrainFolder(
-                self.hparams.hparams.dataset_dir,
-                train=False,
-                transform=self.valid_transform,
-                sequence_length=self.hparams.hparams.sequence_length,
-                skip_frames=self.hparams.hparams.skip_frames,
-                use_frame_index=self.hparams.hparams.use_frame_index,
-                with_pseudo_depth=False
-            )
+            if self.hparams.hparams.dataset_name == 'indemind':
+                val_list = '/' + os.path.join(*self.hparams.hparams.file_list.split('/')[:-1]) + '/val.txt'
+                self.val_dataset = TrainFolder(
+                    self.hparams.hparams.dataset_dir,
+                    train=False,
+                    transform=self.valid_transform,
+                    sequence_length=self.hparams.hparams.sequence_length,
+                    skip_frames=self.hparams.hparams.skip_frames,
+                    use_frame_index=self.hparams.hparams.use_frame_index,
+                    with_pseudo_depth=False,
+                    dataset=self.hparams.hparams.dataset_name,
+                    file_list=val_list
+                )
+            else:
+                self.val_dataset = TrainFolder(
+                    self.hparams.hparams.dataset_dir,
+                    train=False,
+                    transform=self.valid_transform,
+                    sequence_length=self.hparams.hparams.sequence_length,
+                    skip_frames=self.hparams.hparams.skip_frames,
+                    use_frame_index=self.hparams.hparams.use_frame_index,
+                    with_pseudo_depth=False
+                )
         else:
             print("wrong validation mode")
 

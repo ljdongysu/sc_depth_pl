@@ -48,6 +48,7 @@ if __name__ == '__main__':
     # set up trainer
     trainer = Trainer(
         accelerator='gpu',
+        gpus=[0],
         max_epochs=hparams.num_epochs,
         limit_train_batches=hparams.epoch_size,
         limit_val_batches=200 if hparams.val_mode == 'photo' else 1.0,

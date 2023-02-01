@@ -1,9 +1,9 @@
 import torch.utils.data as data
 import numpy as np
-from imageio import imread
+from imageio.v2 import imread
 from path import Path
 import random
-
+import os
 
 def load_as_float(path):
     return imread(path).astype(np.float32)
@@ -46,19 +46,71 @@ class TrainFolder(data.Dataset):
                  skip_frames=1,
                  dataset='kitti',
                  use_frame_index=False,
-                 with_pseudo_depth=False):
+                 with_pseudo_depth=False,
+                 file_list=None):
         np.random.seed(0)
         random.seed(0)
-        self.root = Path(root)/'training'
-        scene_list_path = self.root/'train.txt' if train else self.root/'val.txt'
-        self.scenes = [self.root/folder[:-1]
-                       for folder in open(scene_list_path)]
-        self.transform = transform
         self.dataset = dataset
         self.k = skip_frames
         self.with_pseudo_depth = with_pseudo_depth
-        self.use_frame_index = use_frame_index
-        self.crawl_folders(sequence_length)
+        self.transform = transform
+        if self.dataset == 'indemind':
+            self.root = root
+            self.K_dict = {}
+            self.K = np.array([[1, 0, 0],
+                               [0, 1, 0],
+                               [0, 0, 1]], dtype=np.float32)
+            self.file_list = file_list
+            self.read_indemind_data(self.root, self.file_list)
+        else:
+            self.root = Path(root)/'training'
+            scene_list_path = self.root/'train.txt' if train else self.root/'val.txt'
+            self.scenes = [self.root/folder[:-1]
+                           for folder in open(scene_list_path)]
+            self.use_frame_index = use_frame_index
+            self.crawl_folders(sequence_length)
+
+    def set_by_config_yaml(self, folder):
+        config_file = os.path.join(*(folder.split('/')[:-3]), "config.yaml")
+        config_file = config_file.replace("REMAP", "BASE")
+        if config_file in self.K_dict:
+            return self.K_dict[config_file]
+        else:
+            config_file_tmp = "/" + config_file
+            with open(config_file_tmp, 'r') as f:
+                lines = f.readlines()
+                for i in range(len(lines)):
+                    if "Pl" in lines[i]:
+                        config_Pl_x = lines[i + 4]
+                        Pl_00 = config_Pl_x.split(' ')[5]
+                        Pl_02 = config_Pl_x.split(' ')[7]
+                        config_Pl_y = lines[i + 5]
+
+                        Pl_11 = config_Pl_y.split(' ')[7]
+                        Pl_12 = config_Pl_y.split(' ')[8]
+                        self.K[0][0] = float(Pl_00.split(',')[0])
+                        self.K[0][2] = float(Pl_02.split(',')[0])
+                        self.K[1][1] = float(Pl_11.split(',')[0])
+                        self.K[1][2] = float(Pl_12.split(',')[0])
+                        self.K_dict[config_file] = self.K
+                        return self.K
+
+    def read_indemind_data(self, root, file_list):
+        sequence_set = []
+        with open(file_list,'r') as f:
+            frames_list = f.readlines()
+            for frame_list in frames_list:
+                frame_before, frame_current, frame_after = frame_list.split()
+                sample = {'tgt_img': Path(os.path.join(root,frame_current))}
+                sample['ref_imgs'] = []
+                sample['ref_imgs'].append(Path(os.path.join(root,frame_before)))
+                sample['ref_imgs'].append(Path(os.path.join(root,frame_after)))
+                iiii=frame_current.replace("REMAP", "DEPTH").replace(".jpg", ".png")
+                sample['tgt_pseudo_depth'] = Path(os.path.join(root,frame_current.replace(".jpg", ".png")).replace("REMAP", "DEPTH"))
+                sample['intrinsics'] = self.set_by_config_yaml(os.path.join(root,frame_current))
+                sequence_set.append(sample)
+
+        self.samples = sequence_set
 
     def crawl_folders(self, sequence_length):
         # k skip frames
