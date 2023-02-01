@@ -81,6 +81,12 @@ def generate_list_cam(image_path, image_list, save_file_list):
             for img in img_name:
                 f.write(img.split()[0])
                 f.write(' ')
+            if 'cam0' in img_name[0] and 'cam0' in img_name[1] and 'cam0' in img_name[2]:
+                f.write('l')
+            elif 'cam1' in img_name[0] and 'cam1' in img_name[1] and 'cam1' in img_name[2]:
+                f.write('r')
+            else:
+                assert 0, "one data is not in same camera"
             f.write('\n')
 
 def main():
