@@ -21,6 +21,9 @@ from visualization import *
 
 import cv2
 import re
+import matplotlib as mpl
+import matplotlib.cm as cm
+import PIL.Image as pil
 
 DATA_TYPE = ['kitti', 'kitti15', 'indemind', 'depth', 'i18R']
 
@@ -34,6 +37,8 @@ def GetArgs():
     parser.add_argument('--max_disp', type=int, default=192)
     parser.add_argument('--output', type=str)
     parser.add_argument('--bf', type=float, default=14.2)
+    parser.add_argument('--dataset_name', type=str, default='kitti')
+
 
     # model
     parser.add_argument('--model_version', type=str,
@@ -154,6 +159,7 @@ def WriteDepth(depth, limg, path, name, bf):
     output_color = os.path.join(path, "color", name)
     output_concat_depth = os.path.join(path, "concat_depth", name)
     output_concat = os.path.join(path, "concat", name)
+    output_display = os.path.join(path, "display", name)
     MkdirSimple(output_concat_color)
     MkdirSimple(output_concat_gray)
     MkdirSimple(output_concat_depth)
@@ -161,6 +167,7 @@ def WriteDepth(depth, limg, path, name, bf):
     MkdirSimple(output_depth)
     MkdirSimple(output_color)
     MkdirSimple(output_concat)
+    MkdirSimple(output_display)
 
     predict_np = depth.squeeze().cpu().numpy()
 
@@ -187,6 +194,12 @@ def WriteDepth(depth, limg, path, name, bf):
     cv2.imwrite(output_concat_depth, concat_img_depth)
     cv2.imwrite(output_concat, concat)
 
+    vmax = np.percentile(depth_img, 95)
+    normalizer = mpl.colors.Normalize(vmin=depth_img.min(), vmax=vmax)
+    mapper = cm.ScalarMappable(norm=normalizer, cmap='magma')
+    colormapped_im = (mapper.to_rgba(depth_img)[:, :, :3] * 255).astype(np.uint8)
+    im = pil.fromarray(colormapped_im)
+    im.save(output_display)
 @torch.no_grad()
 def main():
     args = GetArgs()
@@ -213,7 +226,7 @@ def main():
     model = system.depth_net
 
     # get training resolution
-    training_size = get_training_size('kitti')
+    training_size = get_training_size(args.dataset_name)
 
     # data loader
     test_transform = custom_transforms.Compose([

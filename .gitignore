@@ -3,3 +3,4 @@ __pycache__/
 /sc_depth_pl.egg-info/
 .idea/
 ckpts
+result
