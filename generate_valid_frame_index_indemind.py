@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 from path import Path
 import argparse
+from tqdm import tqdm
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -48,7 +49,7 @@ def generate_list_cam(image_path, image_list, save_file_list):
     monodepth2_list = [image_names[0]]
     result_list=[]
     print("all image:", len(image_names))
-    for idx in range(1,len(image_names)):
+    for idx in tqdm(range(1,len(image_names))):
         if idx % 1000 ==0:
             print("idx: ", idx)
             print("ratio > 0.5 image: ", len(monodepth2_list))
@@ -63,13 +64,15 @@ def generate_list_cam(image_path, image_list, save_file_list):
             continue
         else:
             monodepth2_list.append(image_names[idx])
-    print("ratio > 0.5 image:", len(monodepth2_list))
+    print("ratio > 0.5 all images:", len(monodepth2_list))
 
     if len(monodepth2_list) > 1:
-        for idx in range(1,len(monodepth2_list) - 1):
+        for idx in tqdm(range(1,len(monodepth2_list) - 1)):
             before = os.path.join(*(monodepth2_list[idx - 1].split('/')[:-3]))
-            current = os.path.join(*(image_names[idx].split('/')[:-3]))
-            after = os.path.join(*(image_names[idx + 1].split('/')[:-3]))
+            current = os.path.join(*(monodepth2_list[idx].split('/')[:-3]))
+            after = os.path.join(*(monodepth2_list[idx + 1].split('/')[:-3]))
+            print(before,current,after)
+
             if before == current and current == after:
                 result_list.append([monodepth2_list[idx - 1], monodepth2_list[idx],monodepth2_list[idx + 1]])
 
