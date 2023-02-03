@@ -100,7 +100,7 @@ class TrainFolder(data.Dataset):
         with open(file_list,'r') as f:
             frames_list = f.readlines()
             for frame_list in frames_list:
-                frame_before, frame_current, frame_after = frame_list.split()
+                frame_before, frame_current, frame_after, _ = frame_list.split()
                 sample = {'tgt_img': Path(os.path.join(root,frame_current))}
                 sample['ref_imgs'] = []
                 sample['ref_imgs'].append(Path(os.path.join(root,frame_before)))
