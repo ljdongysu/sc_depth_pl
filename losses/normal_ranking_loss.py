@@ -47,7 +47,7 @@ def randomSamplingNormal(inputs, targets, masks, sample_num):
 # inputs_A, inputs_B, targets_A, targets_B, masks_A, masks_B
 ###########
 def ind2sub(idx, cols):
-    r = torch.div(idx, cols, rounding_mode='floor')  # idx // cols
+    r = torch.div(idx, cols)  # idx // cols
     c = idx - r * cols
     return r, c
 

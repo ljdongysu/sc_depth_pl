@@ -11,14 +11,15 @@ def get_opts():
     # dataset
     parser.add_argument('--dataset_dir', type=str)
     parser.add_argument('--dataset_name', type=str,
-                        default='kitti', choices=['kitti', 'nyu', 'ddad', 'bonn', 'tum'])
+                        default='kitti', choices=['kitti', 'nyu', 'ddad', 'bonn', 'tum','indemind'])
     parser.add_argument('--sequence_length', type=int,
                         default=3, help='number of images for training')
     parser.add_argument('--skip_frames', type=int, default=1,
                         help='jump sampling from video')
     parser.add_argument('--use_frame_index', action='store_true',
                         help='filter out static-camera frames in video')
-
+    parser.add_argument('--file_list', type=str,
+                        help='image file list for indemind data')
     # model
     parser.add_argument('--model_version', type=str,
                         default='v1', choices=['v1', 'v2', 'v3'])
@@ -77,6 +78,7 @@ def get_opts():
     parser.add_argument('--save-depth', action='store_true',
                         help='save depth with factor 1000')
 
+
     return parser.parse_args()
 
 
@@ -88,6 +90,8 @@ def get_training_size(dataset_name):
         training_size = [384, 640]
     elif dataset_name in ['nyu', 'tum', 'bonn']:
         training_size = [256, 320]
+    elif dataset_name in ['indemind']:
+        training_size = [384, 640]
     else:
         print('unknown dataset type')
 
