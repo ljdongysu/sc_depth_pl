@@ -36,8 +36,8 @@ if __name__ == '__main__':
                                           monitor='val_loss',
                                           mode='min',
                                           save_last=True,
-                                          save_weights_only=True,
-                                          save_top_k=3)
+                                          save_weights_only=False,
+                                          save_top_k=10)
 
     # restore from previous checkpoints
     if hparams.ckpt_path is not None:
