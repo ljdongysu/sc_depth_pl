@@ -155,6 +155,7 @@ def WriteDepth(depth, limg, path, name, bf):
     output_concat_color = os.path.join(path, "concat_color", name)
     output_concat_gray = os.path.join(path, "concat_gray", name)
     output_gray = os.path.join(path, "gray", name)
+    output_gray_scale = os.path.join(path, "gray_scale", name)
     output_depth = os.path.join(path, "depth", name)
     output_color = os.path.join(path, "color", name)
     output_concat_depth = os.path.join(path, "concat_depth", name)
@@ -168,6 +169,7 @@ def WriteDepth(depth, limg, path, name, bf):
     MkdirSimple(output_color)
     MkdirSimple(output_concat)
     MkdirSimple(output_display)
+    MkdirSimple(output_gray_scale)
 
     predict_np = depth.squeeze().cpu().numpy()
 
@@ -189,6 +191,9 @@ def WriteDepth(depth, limg, path, name, bf):
     cv2.imwrite(output_concat_color, concat_img_color)
     cv2.imwrite(output_concat_gray, concat_img_gray)
     cv2.imwrite(output_color, color_img)
+
+    # cv2.imwrite(output_gray_scale, predict_np * 255 / np.max(predict_np))
+    cv2.imwrite(output_gray_scale, (predict_np - np.min(predict_np))* 255 / (np.max(predict_np) - np.min(predict_np)))
     cv2.imwrite(output_gray, predict_np)
     cv2.imwrite(output_depth, depth_img_rgb)
     cv2.imwrite(output_concat_depth, concat_img_depth)

@@ -72,7 +72,7 @@ class TrainFolder(data.Dataset):
 
     def set_by_config_yaml(self, folder):
         config_file = os.path.join(*(folder.split('/')[:-3]), "config.yaml")
-        config_file = config_file.replace("REMAP", "BASE")
+        # config_file = config_file.replace("REMAP", "BASE")
         if config_file in self.K_dict:
             return self.K_dict[config_file]
         else:
@@ -105,8 +105,7 @@ class TrainFolder(data.Dataset):
                 sample['ref_imgs'] = []
                 sample['ref_imgs'].append(Path(os.path.join(root,frame_before)))
                 sample['ref_imgs'].append(Path(os.path.join(root,frame_after)))
-                iiii=frame_current.replace("REMAP", "DEPTH").replace(".jpg", ".png")
-                sample['tgt_pseudo_depth'] = Path(os.path.join(root,frame_current.replace(".jpg", ".png")).replace("REMAP", "DEPTH"))
+                sample['tgt_pseudo_depth'] = Path(os.path.join(root,frame_current.replace(".jpg", ".png")).replace("REMAP", "DEPTH/CREStereo"))
                 sample['intrinsics'] = self.set_by_config_yaml(os.path.join(root,frame_current))
                 sequence_set.append(sample)
 
