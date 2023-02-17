@@ -47,13 +47,15 @@ class TrainFolder(data.Dataset):
                  dataset='kitti',
                  use_frame_index=False,
                  with_pseudo_depth=False,
-                 file_list=None):
+                 file_list=None,
+                 depth_dir='DEPTH/AdelaiDepth'):
         np.random.seed(0)
         random.seed(0)
         self.dataset = dataset
         self.k = skip_frames
         self.with_pseudo_depth = with_pseudo_depth
         self.transform = transform
+        self.depth_dir = depth_dir
         if self.dataset == 'indemind':
             self.root = root
             self.K_dict = {}
@@ -105,7 +107,7 @@ class TrainFolder(data.Dataset):
                 sample['ref_imgs'] = []
                 sample['ref_imgs'].append(Path(os.path.join(root,frame_before)))
                 sample['ref_imgs'].append(Path(os.path.join(root,frame_after)))
-                sample['tgt_pseudo_depth'] = Path(os.path.join(root,frame_current.replace(".jpg", ".png")).replace("REMAP", "DEPTH/AdelaiDepth"))
+                sample['tgt_pseudo_depth'] = Path(os.path.join(root,frame_current.replace(".jpg", ".png")).replace("REMAP", self.depth_dir))
                 sample['intrinsics'] = self.set_by_config_yaml(os.path.join(root,frame_current))
                 sequence_set.append(sample)
 
