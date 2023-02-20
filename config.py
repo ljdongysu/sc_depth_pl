@@ -22,7 +22,9 @@ def get_opts():
                         help='image file list for indemind data')
 
     parser.add_argument('--depth_dir', type=str, default='DEPTH/AdelaiDepth',
-                        choices=['DEPTH', 'DEPTH/AdelaiDepth', 'DEPTH/CREStereo', 'DEPTH/CREStereo_reduce', 'DEPTH/MiDas'],
+                        choices=['DEPTH', 'DEPTH/AdelaiDepth', 'DEPTH/CREStereo',
+                                 'DEPTH/CREStereo_reduce', 'DEPTH/MiDas',
+                                 'DEPTH/CREStereo_scale'],
                         help='use for change REMAP dir')
 
     # model
