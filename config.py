@@ -20,6 +20,13 @@ def get_opts():
                         help='filter out static-camera frames in video')
     parser.add_argument('--file_list', type=str,
                         help='image file list for indemind data')
+
+    parser.add_argument('--depth_dir', type=str, default='DEPTH/AdelaiDepth',
+                        choices=['DEPTH', 'DEPTH/AdelaiDepth', 'DEPTH/CREStereo',
+                                 'DEPTH/CREStereo_reduce', 'DEPTH/MiDas',
+                                 'DEPTH/CREStereo_scale'],
+                        help='use for change REMAP dir')
+
     # model
     parser.add_argument('--model_version', type=str,
                         default='v1', choices=['v1', 'v2', 'v3'])

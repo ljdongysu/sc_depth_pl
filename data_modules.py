@@ -43,7 +43,8 @@ class VideosDataModule(LightningDataModule):
             use_frame_index=self.hparams.hparams.use_frame_index,
             with_pseudo_depth=self.load_pseudo_depth,
             dataset=self.hparams.hparams.dataset_name,
-            file_list=self.hparams.hparams.file_list
+            file_list=self.hparams.hparams.file_list,
+            depth_dir=self.hparams.hparams.depth_dir
         )
 
         if self.hparams.hparams.val_mode == 'depth':
@@ -64,7 +65,8 @@ class VideosDataModule(LightningDataModule):
                     use_frame_index=self.hparams.hparams.use_frame_index,
                     with_pseudo_depth=False,
                     dataset=self.hparams.hparams.dataset_name,
-                    file_list=val_list
+                    file_list=val_list,
+                    depth_dir=self.hparams.hparams.depth_dir
                 )
             else:
                 self.val_dataset = TrainFolder(

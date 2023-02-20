@@ -44,18 +44,30 @@ if __name__ == '__main__':
         print('load pre-trained model from {}'.format(hparams.ckpt_path))
         system = system.load_from_checkpoint(
             hparams.ckpt_path, strict=False, hparams=hparams)
-
-    # set up trainer
-    trainer = Trainer(
-        accelerator='gpu',
-        gpus=[0],
-        max_epochs=hparams.num_epochs,
-        limit_train_batches=hparams.epoch_size,
-        limit_val_batches=200 if hparams.val_mode == 'photo' else 1.0,
-        num_sanity_val_steps=5,
-        callbacks=[checkpoint_callback],
-        logger=logger,
-        benchmark=True
-    )
+        trainer = Trainer(
+            accelerator='gpu',
+            gpus=[0],
+            max_epochs=hparams.num_epochs,
+            limit_train_batches=hparams.epoch_size,
+            limit_val_batches=200 if hparams.val_mode == 'photo' else 1.0,
+            num_sanity_val_steps=5,
+            callbacks=[checkpoint_callback],
+            logger=logger,
+            benchmark=True,
+            resume_from_checkpoint=hparams.ckpt_path
+        )
+    else:
+        # set up trainer
+        trainer = Trainer(
+            accelerator='gpu',
+            gpus=[0],
+            max_epochs=hparams.num_epochs,
+            limit_train_batches=hparams.epoch_size,
+            limit_val_batches=200 if hparams.val_mode == 'photo' else 1.0,
+            num_sanity_val_steps=5,
+            callbacks=[checkpoint_callback],
+            logger=logger,
+            benchmark=True
+        )
 
     trainer.fit(system, dm)
