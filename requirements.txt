@@ -3,5 +3,5 @@ opencv-python
 tqdm
 imageio
 path
-scipy
+# scipy
 configargparse

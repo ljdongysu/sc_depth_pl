@@ -45,7 +45,7 @@ def generate_index(scene):
 
 def generate_list_cam(image_path, image_list, save_file_list):
     with open(image_list, 'r') as f:
-        image_names = f.readlines()
+        image_names = [f.strip() for f in f.readlines()]
     monodepth2_list = [image_names[0]]
     result_list=[]
     print("all image:", len(image_names))
@@ -81,16 +81,14 @@ def generate_list_cam(image_path, image_list, save_file_list):
     print("write file list in path: ", save_file_list)
     with open(save_file_list, 'w') as f:
         for img_name in result_list:
-            for img in img_name:
-                f.write(img.split()[0])
-                f.write(' ')
             if 'cam0' in img_name[0] and 'cam0' in img_name[1] and 'cam0' in img_name[2]:
-                f.write('l')
+                img_name.append('l')
             elif 'cam1' in img_name[0] and 'cam1' in img_name[1] and 'cam1' in img_name[2]:
-                f.write('r')
+                img_name.append('r')
             else:
-                assert 0, "one data is not in same camera"
-            f.write('\n')
+                continue
+
+            f.write(' '.join(img_name) + '\n')
 
 def main():
 
