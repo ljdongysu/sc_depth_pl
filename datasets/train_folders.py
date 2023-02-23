@@ -107,7 +107,8 @@ class TrainFolder(data.Dataset):
                 sample['ref_imgs'] = []
                 sample['ref_imgs'].append(Path(os.path.join(root,frame_before)))
                 sample['ref_imgs'].append(Path(os.path.join(root,frame_after)))
-                sample['tgt_pseudo_depth'] = Path(os.path.join(root,frame_current.replace(".jpg", ".png")).replace("REMAP", self.depth_dir))
+                frame_current_png = os.path.splitext(frame_current)[0] + '.png'
+                sample['tgt_pseudo_depth'] = Path(os.path.join(self.depth_dir, frame_current_png))
                 sample['intrinsics'] = self.set_by_config_yaml(os.path.join(root,frame_current))
                 sequence_set.append(sample)
 
