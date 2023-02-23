@@ -37,7 +37,7 @@ if __name__ == '__main__':
                                           mode='min',
                                           save_last=True,
                                           save_weights_only=False,
-                                          save_top_k=10)
+                                          save_top_k=hparams.num_epochs)
 
     # restore from previous checkpoints
     if hparams.ckpt_path is not None:
