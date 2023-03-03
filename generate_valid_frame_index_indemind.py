@@ -58,6 +58,8 @@ def generate_list_cam(image_path, image_list, save_file_list):
         image_name2 = os.path.join(image_path, image_names[idx].split()[0])
         frame1 = cv2.imread(image_name1)
         frame2 = cv2.imread(image_name2)
+        if frame1 is None or frame2 is None:
+            continue
         move_ratio = compute_movement_ratio(frame1, frame2)
 
         if move_ratio < 0.5:
@@ -68,12 +70,16 @@ def generate_list_cam(image_path, image_list, save_file_list):
 
     if len(monodepth2_list) > 1:
         for idx in tqdm(range(1,len(monodepth2_list) - 1)):
-            before = os.path.join(*(monodepth2_list[idx - 1].split('/')[:-3]))
-            current = os.path.join(*(monodepth2_list[idx].split('/')[:-3]))
-            after = os.path.join(*(monodepth2_list[idx + 1].split('/')[:-3]))
+            # before = os.path.join(*(monodepth2_list[idx - 1].split('/')[:-3]))
+            # current = os.path.join(*(monodepth2_list[idx].split('/')[:-3]))
+            # after = os.path.join(*(monodepth2_list[idx + 1].split('/')[:-3]))
+            before = os.path.join(*(monodepth2_list[idx - 1].split('_')[:-1]))
+            current = os.path.join(*(monodepth2_list[idx].split('_')[:-1]))
+            after = os.path.join(*(monodepth2_list[idx + 1].split('_')[:-1]))
             print(before,current,after)
 
             if before == current and current == after:
+
                 result_list.append([monodepth2_list[idx - 1], monodepth2_list[idx],monodepth2_list[idx + 1]])
 
         print("valid image: ", len(result_list))
