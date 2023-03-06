@@ -73,9 +73,12 @@ def generate_list_cam(image_path, image_list, save_file_list):
             # before = os.path.join(*(monodepth2_list[idx - 1].split('/')[:-3]))
             # current = os.path.join(*(monodepth2_list[idx].split('/')[:-3]))
             # after = os.path.join(*(monodepth2_list[idx + 1].split('/')[:-3]))
-            before = os.path.join(*(monodepth2_list[idx - 1].split('_')[:-1]))
-            current = os.path.join(*(monodepth2_list[idx].split('_')[:-1]))
-            after = os.path.join(*(monodepth2_list[idx + 1].split('_')[:-1]))
+            # before = os.path.join(*(monodepth2_list[idx - 1].split('_')[:-1]))
+            # current = os.path.join(*(monodepth2_list[idx].split('_')[:-1]))
+            # after = os.path.join(*(monodepth2_list[idx + 1].split('_')[:-1]))
+            before = os.path.join(*(monodepth2_list[idx - 1].split('/')[:-1]))
+            current = os.path.join(*(monodepth2_list[idx].split('/')[:-1]))
+            after = os.path.join(*(monodepth2_list[idx + 1].split('/')[:-1]))
             print(before,current,after)
 
             if before == current and current == after:
@@ -91,7 +94,10 @@ def generate_list_cam(image_path, image_list, save_file_list):
                 img_name.append('l')
             elif 'cam1' in img_name[0] and 'cam1' in img_name[1] and 'cam1' in img_name[2]:
                 img_name.append('r')
-            else:
+            elif 'left' in img_name[0] and 'left' in img_name[1] and 'left' in img_name[2]:
+                img_name.append('l')
+            elif 'right' in img_name[0] and 'right' in img_name[1] and 'right' in img_name[2]:
+                img_name.append('r')
                 continue
 
             f.write(' '.join(img_name) + '\n')
