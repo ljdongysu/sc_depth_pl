@@ -98,7 +98,7 @@ def generate_list_cam(image_path, image_list, save_file_list):
                 img_name.append('l')
             elif 'right' in img_name[0] and 'right' in img_name[1] and 'right' in img_name[2]:
                 img_name.append('r')
-                continue
+            continue
 
             f.write(' '.join(img_name) + '\n')
 
