@@ -52,7 +52,7 @@ SCALE_POINT = {"01_1677139681130091.png": {(366, 234): 30, (263, 236): 40, (461,
                }
 
 MIN_POINT_ONE_IMAGE = {}
-
+IMAGE_GRAY_SCALE_PATH = {}
 MIN_SCALE_POINT = (0,0)
 MIN_SCALE = []
 
@@ -182,6 +182,7 @@ def GetDepthImg(img):
 
 def caculate_scale(image_name, predict_np_gray_scale):
     image_split = image_name.split('/')[-1]
+    IMAGE_GRAY_SCALE_PATH[image_split] = image_name
     if image_split in DEPTH_POINT:
         for point in DEPTH_POINT[image_split]:
             SCALE_POINT[image_split][point] = predict_np_gray_scale[point[1], point[0]] / DEPTH_POINT[image_split][point]
@@ -211,9 +212,15 @@ def best_scale():
     MIN_SCALE_POINT = min_point
 
 
-def get_point_value():
+def get_point_value(path, name):
     image_point = {}
     for image_name in DEPTH_POINT:
+        output_gray_scale = IMAGE_GRAY_SCALE_PATH[image_name]
+        output_gray_scale_save = output_gray_scale.replace("gray_scale", "gray_scale_point")
+        output_gray_scale_save_all = output_gray_scale.replace(".png", "_all.png")
+        MkdirSimple(output_gray_scale_save)
+        image = cv2.imread(output_gray_scale)
+        image_all = image.copy()
         print("image: {}".format(image_name))
         min_point = MIN_POINT_ONE_IMAGE[image_name]
         image_point[image_name] = []
@@ -225,11 +232,21 @@ def get_point_value():
             scaled_all_image_point_value = predict_value / MIN_SCALE[0]
             distance_one = abs(scaled_one_image_point_value - gt_value)
             distance_all = abs(scaled_all_image_point_value - gt_value)
+            image = cv2.circle(image, point, 1, (0, 0, 255, 255), -1)
+            image = cv2.putText(image, str(int(scaled_one_image_point_value)), point, cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 1,
+                        cv2.LINE_AA)
+
+            image_all = cv2.circle(image_all, point, 1, (0, 0, 255, 255), -1)
+            image_all = cv2.putText(image_all, str(int(scaled_all_image_point_value)), point, cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+                                (0, 0, 255), 1,
+                                cv2.LINE_AA)
+
             # print("point: {}, gt_value: {}, predict_value: {}, scale_one: {}, scale_value: {}, scale_all: {}, scaled_all_image_point_value: {}".format(point, gt_value, predict_value, scale, scaled_one_image_point_value, MIN_SCALE[0], scaled_all_image_point_value))
             # print("point: {}, distance_one: {}, distance_all: {}".format(point, distance_one, distance_all))
 
             image_point[image_name].append([image_name,point, gt_value, predict_value, scale, MIN_SCALE[0], scaled_one_image_point_value, scaled_all_image_point_value, distance_one, distance_all])
-
+        cv2.imwrite(output_gray_scale_save, image)
+        cv2.imwrite(output_gray_scale_save_all, image_all)
     return image_point
 def write_info(image_point, result_csv="result.csv"):
     header = ['image_name', 'point', 'gt_value', "predict_value", "scale_one_image", "scale_all", "scaled_one_value", "scaled_all_value", "error_one_image", "error_all_images"]
@@ -286,7 +303,7 @@ def WriteDepth(depth, limg, path, name, bf):
 
     # cv2.imwrite(output_gray_scale, predict_np * 255 / np.max(predict_np))
     predict_np_gray_scale = predict_np * 12
-    caculate_scale(name, predict_np_gray_scale)
+    caculate_scale(output_gray_scale, predict_np_gray_scale)
     cv2.imwrite(output_gray_scale, predict_np_gray_scale)
     cv2.imwrite(output_gray, predict_np)
     cv2.imwrite(output_depth, depth_img_rgb)
@@ -365,10 +382,13 @@ def main():
             pred_disp = model(img_tensor)
 
         img_org = cv2.resize(img_org, (training_size[1], training_size[0]))
+        print("args.output: ",args.output)
         WriteDepth(pred_disp, img_org, args.output, output_name, args.bf)
     if args.save_depth_distance:
         best_scale()
-        depth_info = get_point_value()
+        print("args.output: ",args.output)
+
+        depth_info = get_point_value(args.output, output_name)
         write_info(depth_info, args.ckpt_path.split("/")[-1] + ".csv")
 
 if __name__ == '__main__':
