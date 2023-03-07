@@ -25,7 +25,36 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 import PIL.Image as pil
 
+import csv
+
 DATA_TYPE = ['kitti', 'kitti15', 'indemind', 'depth', 'i18R']
+
+DEPTH_POINT = {"01_1677139681130091.png": {(366, 234): 30, (263, 236): 40, (461, 220): 50, (177, 216): 60, (98, 238): 70},
+               "47_1677139787427099.png": {(321, 227): 80, (273, 237): 90, (377, 236): 100, (221, 227): 110, (157, 247): 120},
+               "35_1677139895719402.png": {(332, 235): 130, (310, 233): 140, (368, 236): 150, (273, 238): 160, (233, 251): 170},
+               "10_1677139990046533.png": {(334, 229): 170, (353, 237): 180, (315, 235): 190, (279, 240): 200},
+               "02_1677140582059523.png": {(442, 241): 170, (386, 235): 180, (324, 235): 190, (272, 238): 200},
+               "44_1677140624594707.png": {(428, 233): 130, (357, 229): 140, (278, 230): 150, (212, 221): 160},
+               "20_1677140660107039.png": {(470, 229): 90, (369, 241): 100, (261, 232): 110, (173, 238): 120},
+               "25_1677140725465658.png": {(574, 223): 50, (390, 223): 60, (237, 229): 70, (96, 228): 80},
+               "14_1677140774705443.png": {(360, 225): 30, (204, 239): 40, (86, 221): 50},
+               }
+
+SCALE_POINT = {"01_1677139681130091.png": {(366, 234): 30, (263, 236): 40, (461, 220): 50, (177, 216): 60, (98, 238): 70},
+               "47_1677139787427099.png": {(321, 227): 80, (273, 237): 90, (377, 236): 100, (221, 227): 110, (157, 247): 120},
+               "35_1677139895719402.png": {(332, 235): 130, (310, 233): 140, (368, 236): 150, (273, 238): 160, (233, 251): 170},
+               "10_1677139990046533.png": {(334, 229): 170, (353, 237): 180, (315, 235): 190, (279, 240): 200},
+               "02_1677140582059523.png": {(442, 241): 170, (386, 235): 180, (324, 235): 190, (272, 238): 200},
+               "44_1677140624594707.png": {(428, 233): 130, (357, 229): 140, (278, 230): 150, (212, 221): 160},
+               "20_1677140660107039.png": {(470, 229): 90, (369, 241): 100, (261, 232): 110, (173, 238): 120},
+               "25_1677140725465658.png": {(574, 223): 50, (390, 223): 60, (237, 229): 70, (96, 228): 80},
+               "14_1677140774705443.png": {(360, 225): 30, (204, 239): 40, (86, 221): 50},
+               }
+
+MIN_POINT_ONE_IMAGE = {}
+
+MIN_SCALE_POINT = (0,0)
+MIN_SCALE = []
 
 def GetArgs():
     parser = argparse.ArgumentParser(description='LaC')
@@ -38,6 +67,7 @@ def GetArgs():
     parser.add_argument('--output', type=str)
     parser.add_argument('--bf', type=float, default=14.2)
     parser.add_argument('--dataset_name', type=str, default='kitti')
+    parser.add_argument('--save_depth_distance', action='store_true', default=False)
 
 
     # model
@@ -150,6 +180,68 @@ def GetDepthImg(img):
 
     return depth_img_rgb.astype(np.uint8)
 
+def caculate_scale(image_name, predict_np_gray_scale):
+    image_split = image_name.split('/')[-1]
+    if image_split in DEPTH_POINT:
+        for point in DEPTH_POINT[image_split]:
+            SCALE_POINT[image_split][point] = predict_np_gray_scale[point[1], point[0]] / DEPTH_POINT[image_split][point]
+
+def best_scale():
+    for image_name in SCALE_POINT:
+        scale_value = list(SCALE_POINT[image_name].values())
+        scale_value_sort = scale_value
+        scale_value_sort.sort()
+        index_key = list(SCALE_POINT[image_name].keys())
+        min_distance = scale_value_sort[len(scale_value)//2]
+        min_point = index_key[scale_value.index(min_distance)]
+        MIN_POINT_ONE_IMAGE[image_name] = min_point
+    distance_value = []
+    distance_key = []
+    for image_name in DEPTH_POINT:
+        distance_value += list(SCALE_POINT[image_name].values())
+        distance_key += list(SCALE_POINT[image_name].keys())
+    distance_value_temp = distance_value
+    distance_value_temp.sort()
+    min_distance = distance_value_temp[len(distance_value_temp) // 2]
+    min_point = distance_key[distance_value.index(min_distance)]
+    for image_name in SCALE_POINT:
+        if min_point in SCALE_POINT[image_name]:
+            MIN_SCALE.append(SCALE_POINT[image_name][min_point])
+            break
+    MIN_SCALE_POINT = min_point
+
+
+def get_point_value():
+    image_point = {}
+    for image_name in DEPTH_POINT:
+        print("image: {}".format(image_name))
+        min_point = MIN_POINT_ONE_IMAGE[image_name]
+        image_point[image_name] = []
+        for point in DEPTH_POINT[image_name]:
+            gt_value = DEPTH_POINT[image_name][point]
+            scale = SCALE_POINT[image_name][point]
+            predict_value = DEPTH_POINT[image_name][point] * SCALE_POINT[image_name][point]
+            scaled_one_image_point_value = predict_value / SCALE_POINT[image_name][min_point]
+            scaled_all_image_point_value = predict_value / MIN_SCALE[0]
+            distance_one = abs(scaled_one_image_point_value - gt_value)
+            distance_all = abs(scaled_all_image_point_value - gt_value)
+            # print("point: {}, gt_value: {}, predict_value: {}, scale_one: {}, scale_value: {}, scale_all: {}, scaled_all_image_point_value: {}".format(point, gt_value, predict_value, scale, scaled_one_image_point_value, MIN_SCALE[0], scaled_all_image_point_value))
+            # print("point: {}, distance_one: {}, distance_all: {}".format(point, distance_one, distance_all))
+
+            image_point[image_name].append([image_name,point, gt_value, predict_value, scale, MIN_SCALE[0], scaled_one_image_point_value, scaled_all_image_point_value, distance_one, distance_all])
+
+    return image_point
+def write_info(image_point, result_csv="result.csv"):
+    header = ['image_name', 'point', 'gt_value', "predict_value", "scale_one_image", "scale_all", "scaled_one_value", "scaled_all_value", "error_one_image", "error_all_images"]
+    with open(result_csv, 'w', encoding='utf-8') as file_obj:
+        writer = csv.writer(file_obj)
+        writer.writerow(header)
+        for image_name in image_point:
+            for image_info in image_point[image_name]:
+                writer.writerow(image_info)
+
+
+
 def WriteDepth(depth, limg, path, name, bf):
     name = os.path.splitext(name)[0] + ".png"
     output_concat_color = os.path.join(path, "concat_color", name)
@@ -193,7 +285,9 @@ def WriteDepth(depth, limg, path, name, bf):
     cv2.imwrite(output_color, color_img)
 
     # cv2.imwrite(output_gray_scale, predict_np * 255 / np.max(predict_np))
-    cv2.imwrite(output_gray_scale, (predict_np - np.min(predict_np))* 255 / (np.max(predict_np) - np.min(predict_np)))
+    predict_np_gray_scale = predict_np * 12
+    caculate_scale(name, predict_np_gray_scale)
+    cv2.imwrite(output_gray_scale, predict_np_gray_scale)
     cv2.imwrite(output_gray, predict_np)
     cv2.imwrite(output_depth, depth_img_rgb)
     cv2.imwrite(output_concat_depth, concat_img_depth)
@@ -272,8 +366,10 @@ def main():
 
         img_org = cv2.resize(img_org, (training_size[1], training_size[0]))
         WriteDepth(pred_disp, img_org, args.output, output_name, args.bf)
-
-
+    if args.save_depth_distance:
+        best_scale()
+        depth_info = get_point_value()
+        write_info(depth_info, args.ckpt_path.split("/")[-1] + ".csv")
 
 if __name__ == '__main__':
     main()
