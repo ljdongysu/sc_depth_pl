@@ -190,7 +190,7 @@ def caculate_scale(image_name, predict_np_gray_scale):
 def best_scale():
     for image_name in SCALE_POINT:
         scale_value = list(SCALE_POINT[image_name].values())
-        scale_value_sort = scale_value
+        scale_value_sort = scale_value.copy()
         scale_value_sort.sort()
         index_key = list(SCALE_POINT[image_name].keys())
         min_distance = scale_value_sort[len(scale_value)//2]
@@ -201,7 +201,7 @@ def best_scale():
     for image_name in DEPTH_POINT:
         distance_value += list(SCALE_POINT[image_name].values())
         distance_key += list(SCALE_POINT[image_name].keys())
-    distance_value_temp = distance_value
+    distance_value_temp = distance_value.copy()
     distance_value_temp.sort()
     min_distance = distance_value_temp[len(distance_value_temp) // 2]
     min_point = distance_key[distance_value.index(min_distance)]
@@ -389,7 +389,7 @@ def main():
         print("args.output: ",args.output)
 
         depth_info = get_point_value(args.output, output_name)
-        write_info(depth_info, args.ckpt_path.split("/")[-1] + ".csv")
+        write_info(depth_info,args.output + "/" + args.ckpt_path.split("/")[-1] + ".csv")
 
 if __name__ == '__main__':
     main()
