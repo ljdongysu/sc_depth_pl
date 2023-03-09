@@ -5,6 +5,8 @@ from path import Path
 import random
 import os
 
+CONFIG_FILE = ['config.yaml', 'MODULE.yaml', 'MoudleParam.yaml']
+
 def load_as_float(path):
     return imread(path).astype(np.float32)
 
@@ -72,14 +74,20 @@ class TrainFolder(data.Dataset):
             self.use_frame_index = use_frame_index
             self.crawl_folders(sequence_length)
 
+    def GetConfigFile(self, path):
+        for file_name in CONFIG_FILE:
+            file = os.path.join(path, file_name)
+            if os.path.exists(file):
+                break
+        return file
+
     def set_by_config_yaml(self, folder):
-        config_file = os.path.join(*(folder.split('/')[:-3]), "config.yaml")
-        # config_file = config_file.replace("REMAP", "BASE")
+        config_file = "/" + os.path.join(*(folder.split('/')[:-3]))
+        config_file = self.GetConfigFile(config_file)
         if config_file in self.K_dict:
             return self.K_dict[config_file]
         else:
-            config_file_tmp = "/" + config_file
-            with open(config_file_tmp, 'r') as f:
+            with open(config_file, 'r') as f:
                 lines = f.readlines()
                 for i in range(len(lines)):
                     if "Pl" in lines[i]:
