@@ -7,5 +7,5 @@ resnet_layers = 18
 
 lr = 1e-4
 batch_size = 12
-num_epochs = 100
-epoch_size = 1000
+num_epochs = 300
+epoch_size = 600
