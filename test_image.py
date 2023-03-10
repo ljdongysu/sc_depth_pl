@@ -53,7 +53,6 @@ SCALE_POINT = {"01_1677139681130091.png": {(366, 234): 30, (263, 236): 40, (461,
 
 MIN_POINT_ONE_IMAGE = {}
 IMAGE_GRAY_SCALE_PATH = {}
-MIN_SCALE_POINT = (0,0)
 MIN_SCALE = []
 
 def GetArgs():
@@ -209,18 +208,58 @@ def best_scale():
         if min_point in SCALE_POINT[image_name]:
             MIN_SCALE.append(SCALE_POINT[image_name][min_point])
             break
-    MIN_SCALE_POINT = min_point
 
+def best_scale_filter(valid_distance):
+    valid_distance_cm = valid_distance * 100
+    distance_value = []
+    distance_key = []
+    image_point = {}
+    for image_name in DEPTH_POINT:
+        distance_value_temp = list(SCALE_POINT[image_name].values())
+        distance_key_temp = list(SCALE_POINT[image_name].keys())
+        gt_distance_temp = list(DEPTH_POINT[image_name].values())
 
+        for gt_distance, distance, key_name in zip(gt_distance_temp, distance_value_temp, distance_key_temp):
+            if gt_distance > valid_distance_cm:
+                continue
+            distance_value.append(distance)
+            distance_key.append(key_name)
+
+    distance_value_sort = distance_value.copy()
+    distance_value_sort.sort()
+    min_distance = distance_value_sort[len(distance_value_sort) // 2]
+    min_point = distance_key[distance_value.index(min_distance)]
+    original_length = len(MIN_SCALE)
+    for image_name in SCALE_POINT:
+        if min_point in SCALE_POINT[image_name]:
+            MIN_SCALE.append(SCALE_POINT[image_name][min_point])
+            break
+    if len(MIN_SCALE) == original_length:
+        assert 0, "find new best scale error!"
+    min_scaled_point = MIN_SCALE[-1]
+    for image_name in DEPTH_POINT:
+        image_point[image_name] = []
+        for point in DEPTH_POINT[image_name]:
+            gt_value = DEPTH_POINT[image_name][point]
+            if gt_value > valid_distance_cm:
+                continue
+            predict_value = DEPTH_POINT[image_name][point] * SCALE_POINT[image_name][point]
+            scale = SCALE_POINT[image_name][point]
+            scaled_all_image_point_value = predict_value / min_scaled_point
+            distance_all = abs(scaled_all_image_point_value - gt_value)
+            image_point[image_name].append([image_name,point, gt_value, predict_value, scale, MIN_SCALE[0], -1, scaled_all_image_point_value, -1, distance_all])
+    return image_point
 def get_point_value(path, name):
     image_point = {}
     for image_name in DEPTH_POINT:
         output_gray_scale = IMAGE_GRAY_SCALE_PATH[image_name]
         output_gray_scale_save = output_gray_scale.replace("gray_scale", "gray_scale_point")
-        output_gray_scale_save_all = output_gray_scale.replace(".png", "_all.png")
+        # output_gray_scale_save_all = output_gray_scale.replace("gray_scale", "gray_scale_point_all.png")
         MkdirSimple(output_gray_scale_save)
+        # MkdirSimple(output_gray_scale_save_all)
+
         image = cv2.imread(output_gray_scale)
-        image_all = image.copy()
+        # image_all = image.copy()
         print("image: {}".format(image_name))
         min_point = MIN_POINT_ONE_IMAGE[image_name]
         image_point[image_name] = []
@@ -236,17 +275,17 @@ def get_point_value(path, name):
             image = cv2.putText(image, str(int(scaled_one_image_point_value)), point, cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 1,
                         cv2.LINE_AA)
 
-            image_all = cv2.circle(image_all, point, 1, (0, 0, 255, 255), -1)
-            image_all = cv2.putText(image_all, str(int(scaled_all_image_point_value)), point, cv2.FONT_HERSHEY_SIMPLEX, 0.7,
-                                (0, 0, 255), 1,
-                                cv2.LINE_AA)
+            # image_all = cv2.circle(image_all, point, 1, (0, 0, 255, 255), -1)
+            # image_all = cv2.putText(image_all, str(int(scaled_all_image_point_value)), point, cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+            #                     (0, 0, 255), 1,
+            #                     cv2.LINE_AA)
 
             # print("point: {}, gt_value: {}, predict_value: {}, scale_one: {}, scale_value: {}, scale_all: {}, scaled_all_image_point_value: {}".format(point, gt_value, predict_value, scale, scaled_one_image_point_value, MIN_SCALE[0], scaled_all_image_point_value))
             # print("point: {}, distance_one: {}, distance_all: {}".format(point, distance_one, distance_all))
 
             image_point[image_name].append([image_name,point, gt_value, predict_value, scale, MIN_SCALE[0], scaled_one_image_point_value, scaled_all_image_point_value, distance_one, distance_all])
         cv2.imwrite(output_gray_scale_save, image)
-        cv2.imwrite(output_gray_scale_save_all, image_all)
+        # cv2.imwrite(output_gray_scale_save_all, image_all)
     return image_point
 def write_info(image_point, result_csv="result.csv"):
     header = ['image_name', 'point', 'gt_value', "predict_value", "scale_one_image", "scale_all", "scaled_one_value", "scaled_all_value", "error_one_image", "error_all_images"]
@@ -390,6 +429,12 @@ def main():
 
         depth_info = get_point_value(args.output, output_name)
         write_info(depth_info,args.output + "/" + args.ckpt_path.split("/")[-1] + ".csv")
+
+        depth_info_filter = best_scale_filter(1)
+        write_info(depth_info_filter, args.output + "/" + args.ckpt_path.split("/")[-1] + "_" + str(1) + "m.csv")
+
+        depth_info_filter = best_scale_filter(1.5)
+        write_info(depth_info_filter, args.output + "/" + args.ckpt_path.split("/")[-1] + "_" + str(1.5) + "m.csv")
 
 if __name__ == '__main__':
     main()
