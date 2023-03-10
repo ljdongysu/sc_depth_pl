@@ -6,3 +6,5 @@ ckpts
 result
 log.txt
 *loc_train.txt
+*log*.txt
+*result*

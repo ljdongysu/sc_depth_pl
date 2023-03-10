@@ -130,26 +130,7 @@ def GetImages(path, flag='kitti'):
     else:
         raise Exception("Can not find path: {}".format(path))
 
-    left_files, right_files = [], []
-    if 'kitti' == flag:
-        left_files = [f for f in paths if 'image_02' in f]
-        right_files = [f.replace('/image_02/', '/image_03/') for f in left_files]
-    elif 'kitti15' == flag:
-        left_files = [f for f in paths if 'image_2' in f]
-        right_files = [f.replace('/image_2/', '/image_3/') for f in left_files]
-    elif 'indemind' == flag:
-        left_files = [f for f in paths if 'cam0' in f]
-        right_files = [f.replace('/cam0/', '/cam1/') for f in left_files]
-    elif 'depth' == flag:
-        left_files = [f for f in paths if 'left' in f]
-        right_files = [f.replace('/left/', '/right/') for f in left_files]
-    elif 'i18R' == flag:
-        left_files = [f for f in paths if '.L' in f]
-        right_files = [f.replace('L/', 'R/').replace('L.', 'R.') for f in left_files]
-    else:
-        raise Exception("Do not support mode: {}".format(flag))
-
-    return left_files, right_files, root_len
+    return paths, root_len
 
 def disp_to_depth(disp, min_depth, max_depth):
     """Convert network's sigmoid output into depth prediction
@@ -178,6 +159,18 @@ def GetDepthImg(img):
 
 
     return depth_img_rgb.astype(np.uint8)
+
+def calcAndDrawHist(image, color):
+    hist = cv2.calcHist([image], [0], None, [256], [0.0, 255.0])
+    minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(hist)
+    histImg = np.zeros([256, 256, 3], np.uint8)
+    hpt = int(0.9 * 256);
+
+    for h in range(256):
+        intensity = int(hist[h] * hpt / maxVal)
+        cv2.line(histImg, (h, 256), (h, 256 - intensity), color)
+
+    return histImg
 
 def caculate_scale(image_name, predict_np_gray_scale):
     image_split = image_name.split('/')[-1]
@@ -296,8 +289,6 @@ def write_info(image_point, result_csv="result.csv"):
             for image_info in image_point[image_name]:
                 writer.writerow(image_info)
 
-
-
 def WriteDepth(depth, limg, path, name, bf):
     name = os.path.splitext(name)[0] + ".png"
     output_concat_color = os.path.join(path, "concat_color", name)
@@ -320,10 +311,11 @@ def WriteDepth(depth, limg, path, name, bf):
     MkdirSimple(output_gray_scale)
 
     predict_np = depth.squeeze().cpu().numpy()
+    print(predict_np.max(), " ", predict_np.min())
+    predict_scale = (predict_np - np.min(predict_np))* 255 / (np.max(predict_np) - np.min(predict_np))
 
-    depth_img = bf / predict_np * 100  # to cm
-
-    predict_np_int = predict_np.astype(np.uint8)
+    predict_scale = predict_scale.astype(np.uint8)
+    predict_np_int = predict_scale
     color_img = cv2.applyColorMap(predict_np_int, cv2.COLORMAP_HOT)
     limg_cv = limg  # cv2.cvtColor(np.asarray(limg), cv2.COLOR_RGB2BGR)
     concat_img_color = np.vstack([limg_cv, color_img])
@@ -331,10 +323,15 @@ def WriteDepth(depth, limg, path, name, bf):
     concat_img_gray = np.vstack([limg_cv, predict_np_rgb])
 
     # get depth
-    depth_img_temp = bf / predict_np_int * 100  # to cm
-    depth_img_rgb = GetDepthImg(depth_img)
+    depth_img_rgb = GetDepthImg(predict_np)
     concat_img_depth = np.vstack([limg_cv, depth_img_rgb])
     concat = np.hstack([np.vstack([limg_cv, color_img]), np.vstack([predict_np_rgb, depth_img_rgb])])
+
+    # hist = calcAndDrawHist(predict_np, [0, 0, 255])
+    # cv2.imshow('hist', hist)
+    # cv2.waitKey(0)
+    # return
+    predict_np *= 250
 
     cv2.imwrite(output_concat_color, concat_img_color)
     cv2.imwrite(output_concat_gray, concat_img_gray)
@@ -349,12 +346,6 @@ def WriteDepth(depth, limg, path, name, bf):
     cv2.imwrite(output_concat_depth, concat_img_depth)
     cv2.imwrite(output_concat, concat)
 
-    vmax = np.percentile(depth_img, 95)
-    normalizer = mpl.colors.Normalize(vmin=depth_img.min(), vmax=vmax)
-    mapper = cm.ScalarMappable(norm=normalizer, cmap='magma')
-    colormapped_im = (mapper.to_rgba(depth_img)[:, :, :3] * 255).astype(np.uint8)
-    im = pil.fromarray(colormapped_im)
-    im.save(output_display)
 @torch.no_grad()
 def main():
     args = GetArgs()
@@ -391,7 +382,7 @@ def main():
     )
 
     for k in DATA_TYPE:
-        left_files, right_files, root_len = GetImages(args.data_path, k)
+        left_files, root_len = GetImages(args.data_path, k)
 
         if len(left_files) != 0:
             break
