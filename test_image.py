@@ -174,6 +174,8 @@ def calcAndDrawHist(image, color):
 
 def caculate_scale(image_name, predict_np_gray_scale):
     image_split = image_name.split('/')[-1]
+    if "cam1" in image_name or "right" in image_name:
+        return
     IMAGE_GRAY_SCALE_PATH[image_split] = image_name
     if image_split in DEPTH_POINT:
         for point in DEPTH_POINT[image_split]:
@@ -240,7 +242,7 @@ def best_scale_filter(valid_distance):
             scale = SCALE_POINT[image_name][point]
             scaled_all_image_point_value = predict_value / min_scaled_point
             distance_all = abs(scaled_all_image_point_value - gt_value)
-            image_point[image_name].append([image_name,point, gt_value, predict_value, scale, MIN_SCALE[0], -1, scaled_all_image_point_value, -1, distance_all])
+            image_point[image_name].append([image_name,point, gt_value, predict_value, scale, MIN_SCALE[-1], -1, scaled_all_image_point_value, -1, distance_all])
     return image_point
 def get_point_value(path, name):
     image_point = {}
@@ -253,7 +255,6 @@ def get_point_value(path, name):
 
         image = cv2.imread(output_gray_scale)
         # image_all = image.copy()
-        print("image: {}".format(image_name))
         min_point = MIN_POINT_ONE_IMAGE[image_name]
         image_point[image_name] = []
         for point in DEPTH_POINT[image_name]:
@@ -261,7 +262,7 @@ def get_point_value(path, name):
             scale = SCALE_POINT[image_name][point]
             predict_value = DEPTH_POINT[image_name][point] * SCALE_POINT[image_name][point]
             scaled_one_image_point_value = predict_value / SCALE_POINT[image_name][min_point]
-            scaled_all_image_point_value = predict_value / MIN_SCALE[0]
+            scaled_all_image_point_value = predict_value / MIN_SCALE[-1]
             distance_one = abs(scaled_one_image_point_value - gt_value)
             distance_all = abs(scaled_all_image_point_value - gt_value)
             image = cv2.circle(image, point, 1, (0, 0, 255, 255), -1)
@@ -276,7 +277,7 @@ def get_point_value(path, name):
             # print("point: {}, gt_value: {}, predict_value: {}, scale_one: {}, scale_value: {}, scale_all: {}, scaled_all_image_point_value: {}".format(point, gt_value, predict_value, scale, scaled_one_image_point_value, MIN_SCALE[0], scaled_all_image_point_value))
             # print("point: {}, distance_one: {}, distance_all: {}".format(point, distance_one, distance_all))
 
-            image_point[image_name].append([image_name,point, gt_value, predict_value, scale, MIN_SCALE[0], scaled_one_image_point_value, scaled_all_image_point_value, distance_one, distance_all])
+            image_point[image_name].append([image_name,point, gt_value, predict_value, scale, MIN_SCALE[-1], scaled_one_image_point_value, scaled_all_image_point_value, distance_one, distance_all])
         cv2.imwrite(output_gray_scale_save, image)
         # cv2.imwrite(output_gray_scale_save_all, image_all)
     return image_point
@@ -331,14 +332,14 @@ def WriteDepth(depth, limg, path, name, bf):
     # cv2.imshow('hist', hist)
     # cv2.waitKey(0)
     # return
-    predict_np *= 250
+    # predict_np *= 250
 
     cv2.imwrite(output_concat_color, concat_img_color)
     cv2.imwrite(output_concat_gray, concat_img_gray)
     cv2.imwrite(output_color, color_img)
 
     # cv2.imwrite(output_gray_scale, predict_np * 255 / np.max(predict_np))
-    predict_np_gray_scale = predict_np * 12
+    predict_np_gray_scale = predict_np * 3
     caculate_scale(output_gray_scale, predict_np_gray_scale)
     cv2.imwrite(output_gray_scale, predict_np_gray_scale)
     cv2.imwrite(output_gray, predict_np)
@@ -386,7 +387,6 @@ def main():
 
         if len(left_files) != 0:
             break
-
     print('Number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
     if use_cuda:
         model.cuda()
@@ -412,7 +412,6 @@ def main():
             pred_disp = model(img_tensor)
 
         img_org = cv2.resize(img_org, (training_size[1], training_size[0]))
-        print("args.output: ",args.output)
         WriteDepth(pred_disp, img_org, args.output, output_name, args.bf)
     if args.save_depth_distance:
         best_scale()
