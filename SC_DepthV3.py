@@ -40,10 +40,10 @@ class SC_DepthV3(LightningModule):
 
         # compute normal
         tgt_normal = depth_to_normals(tgt_depth, intrinsics)
-        index_max = tgt_pseudo_depth == 65535
-        index_min = tgt_pseudo_depth == 0
-        tgt_pseudo_depth[index_max] = tgt_depth[index_max]
-        tgt_pseudo_depth[index_min] = tgt_depth[index_min]
+        # index_max = tgt_pseudo_depth == 65535
+        # index_min = tgt_pseudo_depth == 0
+        # tgt_pseudo_depth[index_max] = tgt_depth[index_max]
+        # tgt_pseudo_depth[index_min] = tgt_depth[index_min]
         tgt_pseudo_normal = depth_to_normals(tgt_pseudo_depth, intrinsics)
 
         # compute loss
