@@ -109,7 +109,7 @@ class SC_DepthV3(LightningModule):
             return errs
 
         # plot 
-        if batch_idx < 3:
+        if batch_idx < 20:
             vis_img = visualize_image(tgt_img[0]) # (3, H, W)
             vis_depth = visualize_depth(tgt_depth[0,0]) # (3, H, W)
             stack = torch.cat([vis_img, vis_depth], dim=1).unsqueeze(0) # (3, 2*H, W)
