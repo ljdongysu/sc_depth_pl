@@ -1,54 +1,45 @@
 import argparse
-import torch
-import torch.nn as nn
-from torchvision import transforms
 import os
-from tqdm import tqdm, trange
-from tqdm.contrib import tzip
-from PIL import Image
-import numpy as np
-
 import torch
-from torch.utils.data import DataLoader
 from tqdm import tqdm
-
 import datasets.custom_transforms as custom_transforms
 from config import get_opts, get_training_size
-from datasets.test_folder import TestSet
-from losses.loss_functions import compute_errors
 from SC_Depth import SC_Depth
 from visualization import *
-
 import cv2
 import re
-import matplotlib as mpl
-import matplotlib.cm as cm
-import PIL.Image as pil
-
 import csv
 
 DATA_TYPE = ['kitti', 'kitti15', 'indemind', 'depth', 'i18R']
 
-DEPTH_POINT = {"01_1677139681130091.png": {(366, 234): 30, (263, 236): 40, (461, 220): 50, (177, 216): 60, (98, 238): 70},
-               "47_1677139787427099.png": {(321, 227): 80, (273, 237): 90, (377, 236): 100, (221, 227): 110, (157, 247): 120},
-               "35_1677139895719402.png": {(332, 235): 130, (310, 233): 140, (368, 236): 150, (273, 238): 160, (233, 251): 170},
-               "10_1677139990046533.png": {(334, 229): 170, (353, 237): 180, (315, 235): 190, (279, 240): 200},
-               "02_1677140582059523.png": {(442, 241): 170, (386, 235): 180, (324, 235): 190, (272, 238): 200},
-               "44_1677140624594707.png": {(428, 233): 130, (357, 229): 140, (278, 230): 150, (212, 221): 160},
-               "20_1677140660107039.png": {(470, 229): 90, (369, 241): 100, (261, 232): 110, (173, 238): 120},
-               "25_1677140725465658.png": {(574, 223): 50, (390, 223): 60, (237, 229): 70, (96, 228): 80},
-               "14_1677140774705443.png": {(360, 225): 30, (204, 239): 40, (86, 221): 50},
+DEPTH_POINT = {"58_1678443598788511.png": {(576, 360): 30, (270, 370): 40, (30, 370): 50},
+               "18_1678443618181485.png": {(430, 360): 50, (190, 360): 60},
+               "45_1678443705488534.png": {(576, 320): 70, (410, 320): 80, (260, 320): 90, (120, 320): 100},
+               "34_1678443754329342.png": {(553, 300): 110, (440, 300): 120, (334, 300): 130, (225, 300): 140},
+               "09_1678443789524418.png": {(499, 271): 150, (415, 271): 160, (332, 271): 170, (250, 271): 180},
+               "35_1678443815301133.png": {(470, 271): 170, (400, 276): 180, (323, 262): 190, (248, 260): 200},
+               "48_1678444128138546.png": {(404, 330): 40, (283, 339): 50, (185, 340): 60},
+               "50_1678444250400632.png": {(518, 362): 40, (390, 330): 50, (290, 340): 60, (212, 349): 70},
+               "34_1678444234838722.png": {(485, 341): 50, (380, 331): 60, (292, 328): 70, (218, 337): 80},
+               "22_1678444282562914.png": {(447, 343): 60, (362, 340): 70, (286, 340): 80, (216, 330): 90},
+               "50_1678444310015710.png": {(390, 312): 100, (335, 305): 110, (286, 298): 120, (232, 292): 130},
+               "25_1678444345767927.png": {(373, 265): 140, (332, 260): 150, (298, 274): 160, (260, 265): 170},
+               "59_1678444379526326.png": {(373, 267): 170, (337, 265): 180, (307, 260): 190, (275, 264): 200},
                }
 
-SCALE_POINT = {"01_1677139681130091.png": {(366, 234): 30, (263, 236): 40, (461, 220): 50, (177, 216): 60, (98, 238): 70},
-               "47_1677139787427099.png": {(321, 227): 80, (273, 237): 90, (377, 236): 100, (221, 227): 110, (157, 247): 120},
-               "35_1677139895719402.png": {(332, 235): 130, (310, 233): 140, (368, 236): 150, (273, 238): 160, (233, 251): 170},
-               "10_1677139990046533.png": {(334, 229): 170, (353, 237): 180, (315, 235): 190, (279, 240): 200},
-               "02_1677140582059523.png": {(442, 241): 170, (386, 235): 180, (324, 235): 190, (272, 238): 200},
-               "44_1677140624594707.png": {(428, 233): 130, (357, 229): 140, (278, 230): 150, (212, 221): 160},
-               "20_1677140660107039.png": {(470, 229): 90, (369, 241): 100, (261, 232): 110, (173, 238): 120},
-               "25_1677140725465658.png": {(574, 223): 50, (390, 223): 60, (237, 229): 70, (96, 228): 80},
-               "14_1677140774705443.png": {(360, 225): 30, (204, 239): 40, (86, 221): 50},
+SCALE_POINT = {"58_1678443598788511.png": {(576, 360): 30, (270, 370): 40, (30, 370): 50},
+               "18_1678443618181485.png": {(430, 360): 50, (190, 360): 60},
+               "45_1678443705488534.png": {(576, 320): 70, (410, 320): 80, (260, 320): 90, (120, 320): 100},
+               "34_1678443754329342.png": {(553, 300): 110, (440, 300): 120, (334, 300): 130, (225, 300): 140},
+               "09_1678443789524418.png": {(499, 271): 150, (415, 271): 160, (332, 271): 170, (250, 271): 180},
+               "35_1678443815301133.png": {(470, 271): 170, (400, 276): 180, (323, 262): 190, (248, 260): 200},
+               "48_1678444128138546.png": {(404, 330): 40, (283, 339): 50, (185, 340): 60},
+               "50_1678444250400632.png": {(518, 362): 40, (390, 330): 50, (290, 340): 60, (212, 349): 70},
+               "34_1678444234838722.png": {(485, 341): 50, (380, 331): 60, (292, 328): 70, (218, 337): 80},
+               "22_1678444282562914.png": {(447, 343): 60, (362, 340): 70, (286, 340): 80, (216, 330): 90},
+               "50_1678444310015710.png": {(390, 312): 100, (335, 305): 110, (286, 298): 120, (232, 292): 130},
+               "25_1678444345767927.png": {(373, 265): 140, (332, 260): 150, (298, 274): 160, (260, 265): 170},
+               "59_1678444379526326.png": {(373, 267): 170, (337, 265): 180, (307, 260): 190, (275, 264): 200},
                }
 
 MIN_POINT_ONE_IMAGE = {}
@@ -62,18 +53,15 @@ def GetArgs():
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--data_path', type=str, default='/media/data/dataset/KITTI/data_scene_flow/training/')
     parser.add_argument('--output', type=str)
-    parser.add_argument('--bf', type=float, default=14.2)
-    parser.add_argument('--dataset_name', type=str, default='kitti')
+    parser.add_argument('--bf', type=float, default=28.8)
+    parser.add_argument('--dataset_name', type=str, default='indemind')
     parser.add_argument('--save_depth_distance', action='store_true', default=False)
 
 
     # model
-    parser.add_argument('--model_version', type=str,
-                        default='v1', choices=['v1', 'v2', 'v3'])
-    parser.add_argument('--resnet_layers', type=int, default=18)
     parser.add_argument('--ckpt_path', type=str, default=None,
                         help='pretrained checkpoint path to load')
-
+    parser.add_argument('--resnet_layers', type=int, default=18)
 
     # configure file
     parser.add_argument('--config', is_config_file=True,
@@ -129,17 +117,6 @@ def GetImages(path, flag='kitti'):
         raise Exception("Can not find path: {}".format(path))
 
     return paths, root_len
-
-def disp_to_depth(disp, min_depth, max_depth):
-    """Convert network's sigmoid output into depth prediction
-    The formula for this conversion is given in the 'additional considerations'
-    section of the paper.
-    """
-    min_disp = 1 / max_depth
-    max_disp = 1 / min_depth
-    scaled_disp = min_disp + (max_disp - min_disp) * disp
-    depth = 1 / scaled_disp
-    return scaled_disp, depth
 
 def GetDepthImg(img):
     depth_img_rest = img.copy()
@@ -337,7 +314,7 @@ def WriteDepth(depth, limg, path, name, bf):
     cv2.imwrite(output_color, color_img)
 
     # cv2.imwrite(output_gray_scale, predict_np * 255 / np.max(predict_np))
-    predict_np_gray_scale = predict_np * 3
+    predict_np_gray_scale = predict_np * 10
     caculate_scale(output_gray_scale, predict_np_gray_scale)
     cv2.imwrite(output_gray_scale, predict_np_gray_scale)
     cv2.imwrite(output_gray, predict_np)

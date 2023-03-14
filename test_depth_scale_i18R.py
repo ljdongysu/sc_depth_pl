@@ -1,26 +1,15 @@
 import argparse
-
 import os
-
-
 import torch
-from torch.utils.data import DataLoader
 from tqdm import tqdm
-
-
 import cv2
-import re
-import matplotlib as mpl
-import matplotlib.cm as cm
-import PIL.Image as pil
 
-import csv
-from test_image import write_info
-from test_image import best_scale
-from test_image import GetImages
-from test_image import MkdirSimple
-from test_image import best_scale_filter
-from test_image import DATA_TYPE, DEPTH_POINT, SCALE_POINT, MIN_POINT_ONE_IMAGE, IMAGE_GRAY_SCALE_PATH, MIN_SCALE
+from test_image_i18R import write_info
+from test_image_i18R import best_scale
+from test_image_i18R import GetImages
+from test_image_i18R import MkdirSimple
+from test_image_i18R import best_scale_filter
+from test_image_i18R import DATA_TYPE, DEPTH_POINT, SCALE_POINT, MIN_POINT_ONE_IMAGE, IMAGE_GRAY_SCALE_PATH, MIN_SCALE
 
 def GetArgs():
     parser = argparse.ArgumentParser(description='LaC')
@@ -96,7 +85,6 @@ def main():
         output_gray_scale = left_image_file
         predict_np_gray_scale = cv2.imread(output_gray_scale)
         caculate_scale(output_gray_scale, predict_np_gray_scale)
-
 
     best_scale()
     print("args.output: ", args.output)
