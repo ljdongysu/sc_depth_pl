@@ -98,6 +98,10 @@ def generate_list_cam(image_path, image_list, save_file_list):
                 img_name.append('l')
             elif 'right' in img_name[0] and 'right' in img_name[1] and 'right' in img_name[2]:
                 img_name.append('r')
+            elif 'imsee_data.bag.imgs.L' in img_name[0] and 'imsee_data.bag.imgs.L' in img_name[1] and 'imsee_data.bag.imgs.L' in img_name[2]:
+                img_name.append('l')
+            elif 'imsee_data.bag.imgs.R' in img_name[0] and 'imsee_data.bag.imgs.R' in img_name[1] and 'imsee_data.bag.imgs.R' in img_name[2]:
+                img_name.append('r')
             else:
                 continue
 
