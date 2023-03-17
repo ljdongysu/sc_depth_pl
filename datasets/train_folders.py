@@ -82,8 +82,12 @@ class TrainFolder(data.Dataset):
         return file
 
     def set_by_config_yaml(self, folder):
-        config_file = "/" + os.path.join(*(folder.split('/')[:-3]))
-        config_file = self.GetConfigFile(config_file)
+        image_path_lehgth = len(folder.split('/'))
+        for index in range(1, image_path_lehgth):
+            config_file = "/" + os.path.join(*(folder.split('/')[:-1 * index]))
+            config_file = self.GetConfigFile(config_file)
+            if os.path.exists(config_file):
+                break
         if config_file in self.K_dict:
             return self.K_dict[config_file]
         else:

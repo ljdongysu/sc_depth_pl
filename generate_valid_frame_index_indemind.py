@@ -7,12 +7,14 @@ from path import Path
 import argparse
 from tqdm import tqdm
 
+image_filter_start = {}
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Selecting video frames for training sc_depth')
     parser.add_argument('--dataset_dir', required=True)
     parser.add_argument('--data_file_list', required=True)
     parser.add_argument('--save_file_list', required=True)
+    parser.add_argument('--remove_start_images', type=int, help="remove start image list in every dir", default=5)
 
     args = parser.parse_args()
     return args
@@ -82,7 +84,12 @@ def generate_list_cam(image_path, image_list, save_file_list):
             print(before,current,after)
 
             if before == current and current == after:
-
+                if before not in image_filter_start:
+                    image_filter_start[before] = 0
+                    continue
+                elif image_filter_start[before] < 5:
+                    image_filter_start[before] += 1
+                    continue
                 result_list.append([monodepth2_list[idx - 1], monodepth2_list[idx],monodepth2_list[idx + 1]])
 
         print("valid image: ", len(result_list))
